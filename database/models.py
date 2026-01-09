@@ -23,6 +23,8 @@ class Wish(Base):
     id: Mapped[int] = mapped_column(primary_key=True, index=True, autoincrement=True)
     name: Mapped[str]
     price: Mapped[float]
-    
+    article: Mapped[int]
+    url: Mapped[str]
     couple_id: Mapped[int] = mapped_column(ForeignKey("couples.id"))
+    user_added_id: Mapped[int] = mapped_column(ForeignKey("user.id"))
     
