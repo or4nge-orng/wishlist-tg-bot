@@ -39,29 +39,41 @@ async def get_user_by_id(user_id: int):
     try:
         user = await get_user_from_db(user_id)
         return user
-    except NoUserFoundError:
-        raise HTMLResponse(status_code=status.HTTP_404_NOT_FOUND, )
+    except NoUserFoundError as e:
+        return HTMLResponse(status_code=status.HTTP_404_NOT_FOUND, content=str(e))
 
 @app.post("/users/")
 async def add_user(user: UserCreate):
     try:
         new_user = await add_user_to_db(user.id, user.username)
         return new_user
-    except Exception as e:
-        return {"status": "error", "message": str(e)}
+    except UserAlreadyExistsError as e:
+        return HTMLResponse(status_code=status.HTTP_409_CONFLICT, content=str(e))
+    except UserCreationError as e:
+        return HTMLResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, content=str(e))
     
 @app.put("/users/{user_id}")
 async def update_user(user_id: int, user: UserUpdate):
-    pass
-    
-
-@app.post("/add_couple/{user1_id}/{user2_id}")
-async def add_couple(user1_id: int, user2_id: int):
     try:
-        await create_couple(user1_id, user2_id)
+        if user.username:
+            await update_user_in_db(user_id, user.username, user.couple_id)
+            return {"status": "success"}
+        else:
+            return {"status": "error", "message": "No username provided"}
+    except NoUserFoundError as e:
+        return HTMLResponse(status_code=status.HTTP_404_NOT_FOUND, content=str(e))
+    except UserUpdateError as e:
+        return HTMLResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, content=str(e))
+        
+@app.delete("/users/{user_id}")
+async def delete_user(user_id: int):
+    try:
+        await delete_user_from_db(user_id)
         return {"status": "success"}
-    except Exception as e:
-        return {"status": "error", "message": str(e)}
+    except NoUserFoundError as e:
+        return HTMLResponse(status_code=status.HTTP_404_NOT_FOUND, content=str(e))
+    except UserDeleteError as e:
+        return HTMLResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, content=str(e))
 
 @app.get("/get_couples", response_model=list[CoupleWithUsers])
 async def get_couples():
@@ -71,10 +83,12 @@ async def get_couples():
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
-@app.delete("/users/{user_id}")
-async def delete_user(user_id: int):
+@app.post("/add_couple/{user1_id}/{user2_id}")
+async def add_couple(user1_id: int, user2_id: int):
     try:
-        await delete_user_from_db(user_id)
+        await create_couple(user1_id, user2_id)
         return {"status": "success"}
-    except NoUserFoundError:
-        return {"status": "error", "message": "No user in database"}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
