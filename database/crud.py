@@ -183,3 +183,41 @@ async def delete_couple_from_db(couple_id: int):
         except:
             await sess.rollback()
             raise CoupleDeleteError()
+
+
+
+async def get_all_wishes_from_db():
+    async with session() as sess:
+        query = select(Wish)
+        result = await sess.execute(query)
+        return result.scalars().all()
+    
+async def get_wish_from_db(wish_id: int) -> Wish:
+    async with session() as sess:
+        query = select(Wish).filter_by(id=wish_id)
+        result = await sess.execute(query)
+        res: Wish | None = result.scalar_one_or_none()
+        if res:
+            return res
+        raise NoWishFoundError()
+    
+async def add_wish_to_db(name: str, price: float, couple_id: int, user_added_id: int, article: int = 0, url: str = '') -> Wish:
+    async with session() as sess:
+        couple = await sess.get(Couple, couple_id)
+        user_added = await sess.get(User, user_added_id)
+        if not couple:
+            raise NoCoupleFoundError(couple_id)
+        
+        if not user_added:
+            raise NoUserFoundError(user_added_id)
+
+        wish = Wish(name=name, price=price, article=article, user_added_id=user_added_id, url=url, couple_id=couple_id)
+        sess.add(wish)
+        try:
+            await sess.commit()
+            await sess.refresh(wish)
+            return wish
+        except Exception as e:
+            await sess.rollback()
+            print(f"Error in add_wish_to_db: {e}")  # ← для отладки
+            raise WishCreationError()

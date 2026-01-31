@@ -121,3 +121,31 @@ async def delete_couple(couple_id: int):
         return {"status": "success"}
     except NoCoupleFoundError as e:
         return HTMLResponse(status_code=status.HTTP_404_NOT_FOUND, content=str(e))
+
+@app.get("/wishes/", response_model=List[Wish])
+async def get_wishes():
+    wishes = await get_all_wishes_from_db()
+    if wishes:
+        return wishes
+    return HTMLResponse(status_code=status.HTTP_404_NOT_FOUND, content="Желаний не найдено")
+
+@app.get("/wishes/{wish_id}", response_model=Wish)
+async def get_wish_by_id(wish_id: int):
+    try:
+        wish = await get_wish_from_db(wish_id)
+        return wish
+    except NoWishFoundError as e:
+        return HTMLResponse(status_code=status.HTTP_404_NOT_FOUND, content=str(e))
+
+@app.post("/wishes/")
+async def add_wish(wish: WishCreate):
+    try:
+        if wish.couple_id:
+            new_wish = await add_wish_to_db(wish.name, wish.price, wish.couple_id, wish.user_added_id, wish.article, wish.url)
+            return new_wish
+        else:
+            return HTMLResponse(status_code=status.HTTP_400_BAD_REQUEST, content="Не передано couple_id")
+    except NoCoupleFoundError as e:
+        return HTMLResponse(status_code=status.HTTP_404_NOT_FOUND, content=str(e))
+    except WishCreationError as e:
+        return HTMLResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, content=str(e))

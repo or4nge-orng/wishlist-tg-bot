@@ -4,7 +4,6 @@ from datetime import datetime
 
 # ----- Wish модели -----
 class WishBase(BaseModel):
-    id: int = Field(..., example=1)
     name: str = Field(..., min_length=1, max_length=255, description="Название товара", example="Новый iPhone")
     price: float = Field(..., ge=0, description="Цена товара", example=999.99)
 
