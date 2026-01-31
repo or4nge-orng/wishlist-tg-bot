@@ -4,25 +4,33 @@ from datetime import datetime
 
 # ----- Wish модели -----
 class WishBase(BaseModel):
-    name: str = Field(..., min_length=1, max_length=255, example="Новый iPhone")
-    price: float = Field(..., gt=0, description="Цена должна быть больше 0", example=999.99)
+    id: int = Field(..., example=1)
+    name: str = Field(..., min_length=1, max_length=255, description="Название товара", example="Новый iPhone")
+    price: float = Field(..., ge=0, description="Цена товара", example=999.99)
 
 class WishCreate(WishBase):
-    couple_id: int = Field(..., description="ID пары, для которой создается желание")
+    couple_id: int = Field(None, description="ID пары, для которой создается желание")
+    article: int = Field(None, ge=0, description="Артикул товара")
+    url: str = Field(None, min_length=0, description="Ссылка на товар")
+    user_added_id: int = Field(None, description="ID пользователя, добавившего желание")
 
 class WishUpdate(BaseModel):
     name: Optional[str] = Field(None, min_length=1, max_length=255)
-    price: Optional[float] = Field(None, gt=0)
+    price: Optional[float] = Field(None, ge=0)
+    article: Optional[int] = Field(None, ge=0)
+    url: Optional[str] = Field(None, min_length=0)
     
     @field_validator('price')
     def price_positive(cls, v):
-        if v is not None and v <= 0:
+        if v is not None and v < 0:
             raise ValueError('Цена должна быть больше 0')
         return v
 
 class Wish(WishBase):
-    id: int
+    article: int
+    url: str
     couple_id: int
+    user_added_id: int
     
     class Config:
         from_attributes = True
@@ -87,6 +95,10 @@ class CoupleDetail(Couple):
     """Полная информация о паре"""
     users: List[UserInCouple] = []
     wishes: List[Wish] = []
+
+class CoupleUpdate(BaseModel):
+    user1_id: Optional[int] = Field(None, description="ID первого пользователя")
+    user2_id: Optional[int] = Field(None, description="ID второго пользователя")
 
 # ----- Response модели -----
 class MessageResponse(BaseModel):

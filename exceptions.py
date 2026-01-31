@@ -34,6 +34,19 @@ class NoCoupleFoundError(CoupleWishesException):
 class CoupleCreationError(CoupleWishesException):
     def __str__(self):
         return "Ошибка добавления новой пары"
+    
+class CoupleDeleteError(CoupleWishesException):
+    def __str__(self):
+        return "Ошибка удаления пары"
+    
+class CoupleUpdateError(CoupleWishesException):
+    def __str__(self):
+        return "Ошибка обновления пары"
+    
+# ----- Wish Exception -----
+class WishCreationError(CoupleWishesException):
+    def __str__(self):
+        return "Ошибка добавления нового желания"
 
 class NoWishFoundError(CoupleWishesException):
     def __str__(self):

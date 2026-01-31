@@ -15,7 +15,7 @@ class User(Base):
 class Couple(Base):
     __tablename__ = "couples"
     id: Mapped[int] = mapped_column(primary_key=True, index=True, autoincrement=True)
-    users: Mapped[list["User"]] = relationship(back_populates="couple")
+    users: Mapped[list["User"]] = relationship(back_populates="couple", cascade="all")
     wishes: Mapped[list["Wish"]] = relationship(cascade="all, delete-orphan")
 
 class Wish(Base):

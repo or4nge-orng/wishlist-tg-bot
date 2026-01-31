@@ -75,20 +75,49 @@ async def delete_user(user_id: int):
     except UserDeleteError as e:
         return HTMLResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, content=str(e))
 
-@app.get("/get_couples", response_model=list[CoupleWithUsers])
+@app.get("/couples/", response_model=List[CoupleWithUsers])
 async def get_couples():
+    couples = await get_all_couples_from_db()
+    return couples
+    
+@app.get("/couples/{couple_id}", response_model=CoupleDetail)
+async def get_couple_by_id(couple_id: int):
     try:
-        couples = await get_all_couples_from_db()
-        return couples
-    except Exception as e:
-        return {"status": "error", "message": str(e)}
+        couple = await get_couple_from_db(couple_id)
+        return couple
+    except NoCoupleFoundError as e:
+        return HTMLResponse(status_code=status.HTTP_404_NOT_FOUND, content=str(e))
+        
 
-@app.post("/add_couple/{user1_id}/{user2_id}")
-async def add_couple(user1_id: int, user2_id: int):
+@app.post("/couples/")
+async def add_couple(couple: CoupleCreate):
     try:
-        await create_couple(user1_id, user2_id)
+        await create_couple(couple.user1_id, couple.user2_id)
+        return couple
+    except NoUserFoundError as e:
+        return HTMLResponse(status_code=status.HTTP_404_NOT_FOUND, content=str(e))
+    except CoupleCreationError as e:
+        return HTMLResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, content=str(e))
+
+@app.put("/couples/{couple_id}")
+async def update_couple(couple_id: int, couple: CoupleUpdate):
+    try:
+        if couple.user1_id:
+            await update_couple_in_db(couple_id, couple.user1_id, couple.user2_id)
+            return {"status": "success"}
+        else:
+            return HTMLResponse(status_code=status.HTTP_400_BAD_REQUEST, content="Не передано user1_id")
+    except NoCoupleFoundError as e:
+        return HTMLResponse(status_code=status.HTTP_404_NOT_FOUND, content=str(e))
+    except NoUserFoundError as e:
+        return HTMLResponse(status_code=status.HTTP_404_NOT_FOUND, content=str(e))
+    except CoupleUpdateError as e:
+        return HTMLResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, content=str(e))
+
+@app.delete("/couples/{couple_id}")
+async def delete_couple(couple_id: int):
+    try:
+        await delete_couple_from_db(couple_id)
         return {"status": "success"}
-    except Exception as e:
-        return {"status": "error", "message": str(e)}
-
-
+    except NoCoupleFoundError as e:
+        return HTMLResponse(status_code=status.HTTP_404_NOT_FOUND, content=str(e))
