@@ -90,9 +90,9 @@ async def get_couple_by_id(couple_id: int):
         
 
 @app.post("/couples/")
-async def add_couple(couple: CoupleCreate):
+async def add_couple(new_couple: CoupleCreate):
     try:
-        await create_couple(couple.user1_id, couple.user2_id)
+        couple = await create_couple(new_couple.user1_id, new_couple.user2_id)
         return couple
     except NoUserFoundError as e:
         return HTMLResponse(status_code=status.HTTP_404_NOT_FOUND, content=str(e))
@@ -147,5 +147,28 @@ async def add_wish(wish: WishCreate):
             return HTMLResponse(status_code=status.HTTP_400_BAD_REQUEST, content="Не передано couple_id")
     except NoCoupleFoundError as e:
         return HTMLResponse(status_code=status.HTTP_404_NOT_FOUND, content=str(e))
+    except NoUserFoundError as e:
+        return HTMLResponse(status_code=status.HTTP_404_NOT_FOUND, content=str(e))
     except WishCreationError as e:
+        return HTMLResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, content=str(e))
+    
+@app.put("/wishes/{wish_id}")
+async def update_wish(wish_id: int, wish: WishUpdate):
+    if wish.name:
+        try:
+            await edit_wish_in_db(wish_id, wish.name, wish.price, wish.article, wish.url, wish.image)
+            return {"status": "success"}
+        except NoWishFoundError as e:
+            return HTMLResponse(status_code=status.HTTP_404_NOT_FOUND, content=str(e))
+        except WishUpdateError as e:
+            return HTMLResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, content=str(e))
+        
+@app.delete("/wishes/{wish_id}")
+async def delete_wish(wish_id: int):
+    try:
+        await delete_wish_from_db(wish_id)
+        return {"status": "success"}
+    except NoWishFoundError as e:
+        return HTMLResponse(status_code=status.HTTP_404_NOT_FOUND, content=str(e))
+    except WishDeleteError as e:
         return HTMLResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, content=str(e))
