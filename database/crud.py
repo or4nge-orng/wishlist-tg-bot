@@ -121,7 +121,7 @@ async def create_couple(user1_id: int, user2_id: int | None = None) -> Couple:
             raise NoUserFoundError(user1_id)
 
         user2 = None
-        if user2_id:
+        if not user2_id:
             user2 = await sess.get(User, user2_id)
             if not user2:
                 raise NoUserFoundError(user2_id)
@@ -174,96 +174,12 @@ async def update_couple_in_db(couple_id: int, user1_id: int, user2_id: int):
 
 async def delete_couple_from_db(couple_id: int):
     async with session() as sess:
-        # Загружаем пару с пользователями и wishes
-        couple = await sess.scalars(
-            select(Couple)
-            .where(Couple.id == couple_id)
-            .with_for_update()
-            .options(selectinload(Couple.users))
-        )
-        couple = couple.one_or_none()
+        couple = await sess.get(Couple, couple_id)
         if not couple:
             raise NoCoupleFoundError(couple_id)
-        
-        # Отвязываем пользователей
-        for user in couple.users:
-            user.couple_id = None
-        
-        # SQLAlchemy автоматически удалит wishes из-за cascade="all, delete-orphan"
-        # и ondelete="CASCADE" в базе данных
-        
         await sess.delete(couple)
         try:
             await sess.commit()
-        except Exception as e:
+        except:
             await sess.rollback()
-            print(f"Error in delete_couple_from_db: {e}")
-            raise CoupleDeleteError() from e
-
-
-
-async def get_all_wishes_from_db():
-    async with session() as sess:
-        query = select(Wish)
-        result = await sess.execute(query)
-        return result.scalars().all()
-    
-async def get_wish_from_db(wish_id: int) -> Wish:
-    async with session() as sess:
-        query = select(Wish).filter_by(id=wish_id)
-        result = await sess.execute(query)
-        res: Wish | None = result.scalar_one_or_none()
-        if res:
-            return res
-        raise NoWishFoundError()
-    
-async def add_wish_to_db(name: str, price: float, couple_id: int, user_added_id: int, article: int = 0, url: str = '', image: str = '') -> Wish:
-    async with session() as sess:
-        couple = await sess.get(Couple, couple_id)
-        user_added = await sess.get(User, user_added_id)
-        if not couple:
-            raise NoCoupleFoundError(couple_id)
-        
-        if not user_added:
-            raise NoUserFoundError(user_added_id)
-
-        wish = Wish(name=name, price=price, article=article, user_added_id=user_added_id, url=url, couple_id=couple_id, image=image)
-        sess.add(wish)
-        try:
-            await sess.commit()
-            await sess.refresh(wish)
-            return wish
-        except Exception as e:
-            await sess.rollback()
-            print(f"Error in add_wish_to_db: {e}")  # ← для отладки
-            raise WishCreationError()
-        
-async def edit_wish_in_db(wish_id: int, name: str, price: float, article: int = 0, url: str = '', image: str = ''):
-    async with session() as sess:
-        wish = await sess.get(Wish, wish_id)
-        if not wish:
-            raise NoWishFoundError(wish_id)
-        wish.name = name
-        wish.price = price
-        wish.article = article
-        wish.url = url
-        wish.image = image
-        try:
-            await sess.commit()
-        except Exception as e:
-            await sess.rollback()
-            print(f"Error in edit_wish_in_db: {e}")  # ← для отладки
-            raise WishUpdateError()
-
-async def delete_wish_from_db(wish_id: int):
-    async with session() as sess:
-        wish = await sess.get(Wish, wish_id)
-        if not wish:
-            raise NoWishFoundError(wish_id)
-        await sess.delete(wish)
-        try:
-            await sess.commit()
-        except Exception as e:
-            await sess.rollback()
-            print(f"Error in delete_wish_from_db: {e}")  # ← для отладки
-            raise WishDeleteError()
+            raise CoupleDeleteError()
