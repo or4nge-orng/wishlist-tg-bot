@@ -15,7 +15,7 @@ class User(Base):
 class Couple(Base):
     __tablename__ = "couples"
     id: Mapped[int] = mapped_column(primary_key=True, index=True, autoincrement=True)
-    users: Mapped[list["User"]] = relationship(back_populates="couple", cascade="all")
+    users: Mapped[list["User"]] = relationship(back_populates="couple", cascade="save-update")
     wishes: Mapped[list["Wish"]] = relationship(cascade="all, delete-orphan")
 
 class Wish(Base):
@@ -25,6 +25,7 @@ class Wish(Base):
     price: Mapped[float]
     article: Mapped[int]
     url: Mapped[str]
-    couple_id: Mapped[int] = mapped_column(ForeignKey("couples.id"))
-    user_added_id: Mapped[int] = mapped_column(ForeignKey("user.id"))
+    image: Mapped[str] = mapped_column(nullable=True)
+    couple_id: Mapped[int] = mapped_column(ForeignKey("couples.id", ondelete='CASCADE'))
+    user_added_id: Mapped[int] = mapped_column(ForeignKey("user.id", ondelete='CASCADE'), nullable=True)
     

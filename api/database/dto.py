@@ -4,7 +4,6 @@ from datetime import datetime
 
 # ----- Wish модели -----
 class WishBase(BaseModel):
-    id: int = Field(..., example=1)
     name: str = Field(..., min_length=1, max_length=255, description="Название товара", example="Новый iPhone")
     price: float = Field(..., ge=0, description="Цена товара", example=999.99)
 
@@ -12,6 +11,7 @@ class WishCreate(WishBase):
     couple_id: int = Field(None, description="ID пары, для которой создается желание")
     article: int = Field(None, ge=0, description="Артикул товара")
     url: str = Field(None, min_length=0, description="Ссылка на товар")
+    image: str = Field(None, min_length=0, description="Ссылка на изображение товара")
     user_added_id: int = Field(None, description="ID пользователя, добавившего желание")
 
 class WishUpdate(BaseModel):
@@ -19,6 +19,7 @@ class WishUpdate(BaseModel):
     price: Optional[float] = Field(None, ge=0)
     article: Optional[int] = Field(None, ge=0)
     url: Optional[str] = Field(None, min_length=0)
+    image: Optional[str] = Field(None, min_length=0)
     
     @field_validator('price')
     def price_positive(cls, v):
@@ -27,8 +28,10 @@ class WishUpdate(BaseModel):
         return v
 
 class Wish(WishBase):
+    id: int
     article: int
     url: str
+    image: str
     couple_id: int
     user_added_id: int
     
