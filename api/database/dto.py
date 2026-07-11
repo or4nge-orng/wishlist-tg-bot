@@ -44,6 +44,7 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     username: Optional[str] = Field(None, min_length=3, max_length=50, example="test")
+    password: str = Field(None, min_length=8, max_length=50, example="test123456")
     couple_id: Optional[int] = Field(None, description="ID пары, к которой присоединить пользователя")
 
 class UserUpdate(BaseModel):

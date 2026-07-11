@@ -23,13 +23,13 @@ async def get_user_from_db(user_id: int) -> User:
             return res
         raise NoUserFoundError(user_id)
     
-async def add_user_to_db(user_id: int, username: str, couple_id: int = None):
+async def add_user_to_db(user_id: int, username: str, password: str, couple_id: int = None):
     async with session() as sess:
         try:
             await get_user_from_db(user_id)
             raise UserAlreadyExistsError()
         except NoUserFoundError:
-            new_user = User(id=user_id, username=username, couple_id=couple_id)
+            new_user = User(id=user_id, username=username, couple_id=couple_id, password=password)
             sess.add(new_user)
             try:
                 await sess.commit()
