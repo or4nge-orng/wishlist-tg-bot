@@ -51,3 +51,17 @@ class WishCreationError(CoupleWishesException):
 class NoWishFoundError(CoupleWishesException):
     def __str__(self):
         return "Желание не найдено"
+    
+class WishDeleteError(CoupleWishesException):
+    def __init__(self, wish_id):
+        super().__init__(wish_id)
+        self.wish_id = wish_id
+    def __str__(self):
+        return f"Ошибка удаления желания {self.wish_id}"
+    
+class WishUpdateError(CoupleWishesException):
+    def __init__(self, wish_id):
+        super().__init__(wish_id)
+        self.wish_id = wish_id
+    def __str__(self):
+        return f"Ошибка изменения желания {self.wish_id}"
