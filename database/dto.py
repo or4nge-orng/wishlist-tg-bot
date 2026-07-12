@@ -29,11 +29,11 @@ class WishUpdate(BaseModel):
 
 class Wish(WishBase):
     id: int
-    article: int
-    url: str
-    image: str
+    article: Optional[int] = None  # ← Optional!
+    url: Optional[str] = None       # ← Optional!
+    image: Optional[str] = None     # ← ОБЯЗАТЕЛЬНО!
     couple_id: int
-    user_added_id: int
+    user_added_id: Optional[int] = None
     
     class Config:
         from_attributes = True
