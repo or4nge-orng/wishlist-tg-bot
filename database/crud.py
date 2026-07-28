@@ -17,7 +17,7 @@ async def get_all_users_from_db():
         result = await sess.execute(query)
         return result.scalars().all()
 
-async def get_user_from_db(user_name: int) -> User:
+async def get_user_from_db(user_name: str) -> User:
     async with session() as sess:
         query = select(User).filter_by(username=user_name)
         result = await sess.execute(query)
@@ -55,7 +55,6 @@ async def update_user_in_db(user_id: int, username: str, couple_id: int):
                 stmt = select(Couple).where(Couple.id == user.couple_id).with_for_update()
                 result = await sess.scalars(stmt)
                 couple = result.one_or_none()
-                print(couple.id)
                 if couple:
                     # Подсчитываем, сколько пользователей в паре (до удаления)
                     user_count = await sess.scalar(

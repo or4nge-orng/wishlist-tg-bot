@@ -62,11 +62,11 @@ async def get_user_by_id(username: str):
         return HTMLResponse(status_code=status.HTTP_404_NOT_FOUND, content=str(e))
     
 @app.get("/login/", response_model=UserLogin)
-async def user_login(user: UserLogin): 
+async def user_login(user_login: UserLogin): 
     try:
-        user = await get_user_from_db(user.username)
-        password = password.encode("utf-8")
-        if bcrypt.checkpw(password, user.password):
+        user = await get_user_from_db(user_login.username)
+        raw_password = user.password.get_secret_value() if hasattr(user.password, 'get_secret_value') else user.password
+        if bcrypt.checkpw(raw_password.encode("utf-8"), user_login.password):
             return {'status': True, 'username': user.username}
         else:
             return {'status': False}
