@@ -10,7 +10,7 @@ class User(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     username: Mapped[str] = mapped_column(unique=True)
     password: Mapped[bytes]
-    couple_id: Mapped[Optional[int]] = mapped_column(ForeignKey("couples.id"))
+    couple_id: Mapped[Optional[int]] = mapped_column(ForeignKey("couples.id"), nullable=True)
     couple: Mapped[Optional["Couple"]] = relationship(back_populates="users")
 
 class Couple(Base):

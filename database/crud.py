@@ -20,6 +20,7 @@ async def get_all_users_from_db():
 async def get_user_from_db(user_name: str) -> User:
     async with session() as sess:
         query = select(User).filter_by(username=user_name)
+        print("here")
         result = await sess.execute(query)
         res: User | None = result.scalar_one_or_none()
         if res:
@@ -29,21 +30,18 @@ async def get_user_from_db(user_name: str) -> User:
     
 async def add_user_to_db(user_id: int, username: str, password: str, couple_id: int = None):
     async with session() as sess:
-        try:
-            await get_user_from_db(username)
+        existing = await get_user_from_db(username)
+        if existing:
             raise UserAlreadyExistsError()
-        except NoUserFoundError:
-            password = password.encode("utf-8")
-            salt = bcrypt.gensalt()
-            hashed_password = bcrypt.hashpw(password, salt)
-            new_user = User(id=user_id, username=username, couple_id=couple_id, password=hashed_password)
-            sess.add(new_user)
-            try:
-                await sess.commit()
-                return new_user
-            except:
-                await sess.rollback()
-                raise UserCreationError()
+        hashed_password = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt())
+        new_user = User(id=user_id, username=username, couple_id=couple_id, password=hashed_password)
+        sess.add(new_user)
+        try:
+            await sess.commit()
+            return new_user
+        except:
+            await sess.rollback()
+            raise UserCreationError()
         
 async def update_user_in_db(user_id: int, username: str, couple_id: int):
     async with session() as sess:

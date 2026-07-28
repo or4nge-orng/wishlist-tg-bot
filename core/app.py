@@ -77,7 +77,7 @@ async def user_login(user_login: UserLogin):
 @app.post("/users/")
 async def add_user(user: UserCreate):
     try:
-        new_user = await add_user_to_db(user.id, user.username, user.password)
+        new_user = await add_user_to_db(user.id, user.username, user.password, user.couple_id)
         return new_user
     except UserAlreadyExistsError as e:
         return HTMLResponse(status_code=status.HTTP_409_CONFLICT, content=str(e))
