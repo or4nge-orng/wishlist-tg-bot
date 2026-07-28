@@ -4,11 +4,11 @@ class CoupleWishesException(Exception):
 # ----- User Exception -----
 
 class NoUserFoundError(CoupleWishesException):
-    def __init__(self, user_id):
-        super().__init__(user_id)
-        self.user_id = user_id
+    def __init__(self, username):
+        super().__init__(username)
+        self.user_id = username
     def __str__(self):
-        return f"Пользователь {self.user_id} не найден"
+        return f"Пользователь {self.username} не найден"
 
 class UserAlreadyExistsError(CoupleWishesException):
     def __str__(self):

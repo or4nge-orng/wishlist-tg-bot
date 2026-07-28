@@ -1,3 +1,7 @@
+import re
+import logging
+import bcrypt
+
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -12,10 +16,25 @@ from database.dto import *
 
 from core.exceptions import *
 
+class FastAPIObfuscationFilter(logging.Filter):
+    def filter(self, record: logging.LogRecord) -> bool:
+        message = record.getMessage()
+        # Regex to catch JSON patterns: "password": "value"
+        pattern = r'("(?:password|pwd|secret|token)")\s*:\s*"[^"]+"'
+        if re.search(pattern, message, re.IGNORECASE):
+            record.msg = re.sub(pattern, r'\1: "********"', message, flags=re.IGNORECASE)
+            record.ar
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     async with engine.begin() as connection:
         await connection.run_sync(Base.metadata.create_all)
+
+        loggers = ["uvicorn", "uvicorn.access", "uvicorn.error"]
+        
+        for logger_name in loggers:
+            logger = logging.getLogger(logger_name)
+            logger.addFilter(FastAPIObfuscationFilter())
     yield
 
 app = FastAPI(lifespan=lifespan)
@@ -34,13 +53,26 @@ async def get_users():
     users = await get_all_users_from_db()
     return users
 
-@app.get("/users/{user_id}/", response_model=User)
-async def get_user_by_id(user_id: int):
+@app.get("/users/{username}/", response_model=User)
+async def get_user_by_id(username: str):
     try:
-        user = await get_user_from_db(user_id)
+        user = await get_user_from_db(username)
         return user
     except NoUserFoundError as e:
         return HTMLResponse(status_code=status.HTTP_404_NOT_FOUND, content=str(e))
+    
+@app.get("/login/", response_model=UserLogin)
+async def user_login(user: UserLogin): 
+    try:
+        user = await get_user_from_db(user.username)
+        password = password.encode("utf-8")
+        if bcrypt.checkpw(password, user.password):
+            return {'status': True, 'username': user.username}
+        else:
+            return {'status': False}
+    except NoUserFoundError as e:
+        return HTMLResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, content=str(e))
+
 
 @app.post("/users/")
 async def add_user(user: UserCreate):
@@ -141,7 +173,7 @@ async def get_wish_by_id(wish_id: int):
 async def add_wish(wish: WishCreate):
     try:
         if wish.couple_id:
-            new_wish = await add_wish_to_db(wish.name, wish.price, wish.couple_id, wish.user_added_id, wish.article, wish.url)
+            new_wish = await add_wish_to_db(wish.name, wish.price, wish.couple_id, wish.user_added_id, wish.article or 0, wish.url or '', wish.image or None)
             return new_wish
         else:
             return HTMLResponse(status_code=status.HTTP_400_BAD_REQUEST, content="Не передано couple_id")
@@ -156,7 +188,7 @@ async def add_wish(wish: WishCreate):
 async def update_wish(wish_id: int, wish: WishUpdate):
     if wish.name:
         try:
-            await edit_wish_in_db(wish_id, wish.name, wish.price, wish.article, wish.url, wish.image)
+            await edit_wish_in_db(wish_id, wish.name, wish.price, wish.article or 0, wish.url or '', wish.image)
             return {"status": "success"}
         except NoWishFoundError as e:
             return HTMLResponse(status_code=status.HTTP_404_NOT_FOUND, content=str(e))

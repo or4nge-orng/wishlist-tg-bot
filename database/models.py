@@ -8,8 +8,8 @@ class Base(DeclarativeBase):
 class User(Base):
     __tablename__ = "user"
     id: Mapped[int] = mapped_column(primary_key=True)
-    username: Mapped[str]
-    password: Mapped[str]
+    username: Mapped[str] = mapped_column(unique=True)
+    password: Mapped[bytes]
     couple_id: Mapped[Optional[int]] = mapped_column(ForeignKey("couples.id"))
     couple: Mapped[Optional["Couple"]] = relationship(back_populates="users")
 
@@ -26,7 +26,7 @@ class Wish(Base):
     price: Mapped[float]
     article: Mapped[int]
     url: Mapped[str]
-    image: Mapped[str] = mapped_column(nullable=True)
+    image: Mapped[Optional[str]] = mapped_column(nullable=True)
     couple_id: Mapped[int] = mapped_column(ForeignKey("couples.id", ondelete='CASCADE'))
     user_added_id: Mapped[int] = mapped_column(ForeignKey("user.id", ondelete='CASCADE'), nullable=True)
     

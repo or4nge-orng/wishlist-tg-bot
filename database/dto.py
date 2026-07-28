@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, SecretStr
 from typing import Optional, List
 from datetime import datetime
 
@@ -11,7 +11,7 @@ class WishCreate(WishBase):
     couple_id: int = Field(None, description="ID пары, для которой создается желание")
     article: int = Field(None, ge=0, description="Артикул товара")
     url: str = Field(None, min_length=0, description="Ссылка на товар")
-    image: str = Field(None, min_length=0, description="Ссылка на изображение товара")
+    image: str = Field(None, min_length=0, description="Имя файла изображения")
     user_added_id: int = Field(None, description="ID пользователя, добавившего желание")
 
 class WishUpdate(BaseModel):
@@ -44,8 +44,12 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     username: Optional[str] = Field(None, min_length=3, max_length=50, example="test")
-    password: str = Field(None, min_length=8, max_length=50, example="test123456")
+    password: Optional[SecretStr] = Field(None, min_length=8, max_length=50, example="test123456")
     couple_id: Optional[int] = Field(None, description="ID пары, к которой присоединить пользователя")
+
+class UserLogin(UserBase):
+    username: str
+    password: SecretStr
 
 class UserUpdate(BaseModel):
     username: Optional[str] = Field(None, min_length=3, max_length=50)

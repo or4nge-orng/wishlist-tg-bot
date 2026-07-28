@@ -4,6 +4,9 @@ from database.db import session
 from sqlalchemy import func, select
 from sqlalchemy.orm import selectinload
 
+from typing import Optional
+import bcrypt
+
 from core.exceptions import *
 
 # ----- User Cruds -----
@@ -14,22 +17,26 @@ async def get_all_users_from_db():
         result = await sess.execute(query)
         return result.scalars().all()
 
-async def get_user_from_db(user_id: int) -> User:
+async def get_user_from_db(user_name: int) -> User:
     async with session() as sess:
-        query = select(User).filter_by(id=user_id)
+        query = select(User).filter_by(username=user_name)
         result = await sess.execute(query)
         res: User | None = result.scalar_one_or_none()
         if res:
             return res
-        raise NoUserFoundError(user_id)
+        raise NoUserFoundError(user_name)
+        
     
 async def add_user_to_db(user_id: int, username: str, password: str, couple_id: int = None):
     async with session() as sess:
         try:
-            await get_user_from_db(user_id)
+            await get_user_from_db(username)
             raise UserAlreadyExistsError()
         except NoUserFoundError:
-            new_user = User(id=user_id, username=username, couple_id=couple_id, password=password)
+            password = password.encode("utf-8")
+            salt = bcrypt.gensalt()
+            hashed_password = bcrypt.hashpw(password, salt)
+            new_user = User(id=user_id, username=username, couple_id=couple_id, password=hashed_password)
             sess.add(new_user)
             try:
                 await sess.commit()
@@ -217,7 +224,7 @@ async def get_wish_from_db(wish_id: int) -> Wish:
             return res
         raise NoWishFoundError()
     
-async def add_wish_to_db(name: str, price: float, couple_id: int, user_added_id: int, article: int = 0, url: str = '', image: str = '') -> Wish:
+async def add_wish_to_db(name: str, price: float, couple_id: int, user_added_id: int, article: int = 0, url: str = '', image: Optional[str] = '') -> Wish:
     async with session() as sess:
         couple = await sess.get(Couple, couple_id)
         user_added = await sess.get(User, user_added_id)
@@ -226,6 +233,8 @@ async def add_wish_to_db(name: str, price: float, couple_id: int, user_added_id:
         
         if not user_added:
             raise NoUserFoundError(user_added_id)
+        
+        image = image.strip() if isinstance(image, str) and image.strip() else None 
 
         wish = Wish(name=name, price=price, article=article, user_added_id=user_added_id, url=url, couple_id=couple_id, image=image)
         sess.add(wish)
@@ -238,7 +247,7 @@ async def add_wish_to_db(name: str, price: float, couple_id: int, user_added_id:
             print(f"Error in add_wish_to_db: {e}")  # ← для отладки
             raise WishCreationError()
         
-async def edit_wish_in_db(wish_id: int, name: str, price: float, article: int = 0, url: str = '', image: str = ''):
+async def edit_wish_in_db(wish_id: int, name: str, price: float, article: int = 0, url: str = '', image: Optional[str] = ''):
     async with session() as sess:
         wish = await sess.get(Wish, wish_id)
         if not wish:
@@ -247,7 +256,7 @@ async def edit_wish_in_db(wish_id: int, name: str, price: float, article: int = 
         wish.price = price
         wish.article = article
         wish.url = url
-        wish.image = image
+        wish.image = image.strip() if isinstance(image, str) and image.strip() else None
         try:
             await sess.commit()
         except Exception as e:
