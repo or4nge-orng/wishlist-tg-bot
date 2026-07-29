@@ -31,6 +31,7 @@ async def get_user_from_db(user_name: str) -> User:
 async def add_user_to_db(user_id: int, username: str, password: str, couple_id: int = None):
     async with session() as sess:
         try:
+            password = password.get_secret_value()
             hashed_password = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt())
             new_user = User(id=user_id, username=username, couple_id=couple_id, password=hashed_password)
             sess.add(new_user)
