@@ -79,10 +79,8 @@ async def add_user(user: UserCreate):
     try:
         new_user = await add_user_to_db(user.id, user.username, user.password, user.couple_id)
         return new_user
-    except UserAlreadyExistsError as e:
+    except Exception as e:
         return HTMLResponse(status_code=status.HTTP_409_CONFLICT, content=str(e))
-    except UserCreationError as e:
-        return HTMLResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, content=str(e))
     
 @app.put("/users/{user_id}")
 async def update_user(user_id: int, user: UserUpdate):
