@@ -8,7 +8,7 @@ class Base(DeclarativeBase):
 class User(Base):
     __tablename__ = "user"
     id: Mapped[int] = mapped_column(primary_key=True)
-    username: Mapped[str] = mapped_column(unique=True)
+    username: Mapped[str] = mapped_column(unique=True, index=True)
     password: Mapped[bytes]
     couple_id: Mapped[Optional[int]] = mapped_column(ForeignKey("couples.id"), nullable=True)
     couple: Mapped[Optional["Couple"]] = relationship(back_populates="users")

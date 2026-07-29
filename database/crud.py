@@ -30,17 +30,17 @@ async def get_user_from_db(user_name: str) -> User:
     
 async def add_user_to_db(user_id: int, username: str, password: str, couple_id: int = None):
     async with session() as sess:
-        existing = await get_user_from_db(username)
-        if existing:
-            raise UserAlreadyExistsError()
-        hashed_password = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt())
-        new_user = User(id=user_id, username=username, couple_id=couple_id, password=hashed_password)
-        sess.add(new_user)
         try:
+            hashed_password = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt())
+            new_user = User(id=user_id, username=username, couple_id=couple_id, password=hashed_password)
+            sess.add(new_user)
             await sess.commit()
+            await sess.refresh(new_user)
             return new_user
-        except:
+        except Exception as e:
             await sess.rollback()
+            if "unique" in str(e).lower() or "duplicate" in str(e).lower():
+                raise UserAlreadyExistsError()
             raise UserCreationError()
         
 async def update_user_in_db(user_id: int, username: str, couple_id: int):
