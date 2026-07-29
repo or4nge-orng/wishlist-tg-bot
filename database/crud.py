@@ -39,6 +39,7 @@ async def add_user_to_db(user_id: int, username: str, password: str, couple_id: 
             return new_user
         except Exception as e:
             await sess.rollback()
+            print(f"Error in add_user_to_db: {e}")  # ← для отладки
             if "unique" in str(e).lower() or "duplicate" in str(e).lower():
                 raise UserAlreadyExistsError()
             raise UserCreationError()
