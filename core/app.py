@@ -73,9 +73,8 @@ async def get_user_by_id(user_id: int):
 async def user_login(user_login: UserLogin): 
     try:
         user = await get_user_from_db_by_username(user_login.username)
-        raw_password = user.password.get_secret_value() if hasattr(user.password, 'get_secret_value') else user.password
-        print(raw_password)
-        if bcrypt.checkpw(raw_password.encode("utf-8"), user_login.password):
+        login_password = user_login.password.get_secret_value() if hasattr(user.password, 'get_secret_value') else user.password
+        if bcrypt.checkpw(login_password.encode("utf-8"), user.password):
             return {'status': True, 'username': user.username}
         else:
             return {'status': False}
