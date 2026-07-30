@@ -80,6 +80,8 @@ async def user_login(user_login: UserLogin):
             return {'status': False}
     except NoUserFoundError as e:
         return HTMLResponse(status_code=status.HTTP_404_NOT_FOUND, content=str(e))
+    except Exception as e:
+        return HTMLResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, content=str(e))
 
 
 @app.post("/users/")
