@@ -47,7 +47,7 @@ class UserCreate(UserBase):
     password: Optional[SecretStr] = Field(None, min_length=8, max_length=50, example="test123456")
     couple_id: Optional[int] = Field(None, description="ID пары, к которой присоединить пользователя")
 
-class UserLogin(UserBase):
+class UserLogin(BaseModel):
     username: str
     password: SecretStr
 
