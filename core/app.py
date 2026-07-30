@@ -53,10 +53,18 @@ async def get_users():
     users = await get_all_users_from_db()
     return users
 
-@app.get("/users/{username}/", response_model=User)
-async def get_user_by_id(username: str):
+@app.get("/users/username/{username}/", response_model=User)
+async def get_user_by_username(username: str):
     try:
-        user = await get_user_from_db(username)
+        user = await get_user_from_db_by_username(username)
+        return user
+    except NoUserFoundError as e:
+        return HTMLResponse(status_code=status.HTTP_404_NOT_FOUND, content=str(e))
+
+@app.get("users/id/{user_id}", response_model=User)
+async def get_user_by_id(user_id: int):
+    try:
+        user = await get_user_from_db_by_id(user_id)
         return user
     except NoUserFoundError as e:
         return HTMLResponse(status_code=status.HTTP_404_NOT_FOUND, content=str(e))
@@ -64,14 +72,14 @@ async def get_user_by_id(username: str):
 @app.get("/login/", response_model=UserLogin)
 async def user_login(user_login: UserLogin): 
     try:
-        user = await get_user_from_db(user_login.username)
+        user = await get_user_from_db_by_username(user_login.username)
         raw_password = user.password.get_secret_value() if hasattr(user.password, 'get_secret_value') else user.password
         if bcrypt.checkpw(raw_password.encode("utf-8"), user_login.password):
             return {'status': True, 'username': user.username}
         else:
             return {'status': False}
     except NoUserFoundError as e:
-        return HTMLResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, content=str(e))
+        return HTMLResponse(status_code=status.HTTP_404_NOT_FOUND, content=str(e))
 
 
 @app.post("/users/")
@@ -79,8 +87,10 @@ async def add_user(user: UserCreate):
     try:
         new_user = await add_user_to_db(user.id, user.username, user.password, user.couple_id)
         return new_user
-    except Exception as e:
+    except UserAlreadyExistsError as e:
         return HTMLResponse(status_code=status.HTTP_409_CONFLICT, content=str(e))
+    except UserCreationError as e:
+        return HTMLResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, content=str(e))
     
 @app.put("/users/{user_id}")
 async def update_user(user_id: int, user: UserUpdate):

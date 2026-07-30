@@ -17,15 +17,23 @@ async def get_all_users_from_db():
         result = await sess.execute(query)
         return result.scalars().all()
 
-async def get_user_from_db(user_name: str) -> User:
+async def get_user_from_db_by_username(user_name: str) -> User:
     async with session() as sess:
         query = select(User).filter_by(username=user_name)
-        print("here")
         result = await sess.execute(query)
         res: User | None = result.scalar_one_or_none()
         if res:
             return res
         raise NoUserFoundError(user_name)
+
+async def get_user_from_db_by_id(user_id: int) -> User:
+    async with session() as sess:
+        query = select(User).filter_by(user_id=user_id)
+        result = await sess.execute(query)
+        res: User | None = result.scalar_one_or_none()
+        if res:
+            return res
+        raise NoUserFoundError(user_id)
         
     
 async def add_user_to_db(user_id: int, username: str, password: str, couple_id: int = None):
@@ -33,7 +41,7 @@ async def add_user_to_db(user_id: int, username: str, password: str, couple_id: 
         try:
             if hasattr(password, 'get_secret_value'):
                 password = password.get_secret_value()
-                
+
             hashed_password = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt())
 
             couple_id = None if couple_id == 0 else couple_id
@@ -45,7 +53,9 @@ async def add_user_to_db(user_id: int, username: str, password: str, couple_id: 
             return new_user
         except Exception as e:
             await sess.rollback()
-            raise e
+            if "unique" in str(e).lower() or "duplicate" in str(e).lower():
+                raise UserAlreadyExistsError
+            raise UserCreationError() from e
         
 async def update_user_in_db(user_id: int, username: str, couple_id: int):
     async with session() as sess:
