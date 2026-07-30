@@ -69,7 +69,7 @@ async def get_user_by_id(user_id: int):
     except NoUserFoundError as e:
         return HTMLResponse(status_code=status.HTTP_404_NOT_FOUND, content=str(e))
     
-@app.get("/login/", response_model=UserLogin)
+@app.post("/login/", response_model=UserLogin)
 async def user_login(user_login: UserLogin): 
     try:
         user = await get_user_from_db_by_username(user_login.username)
