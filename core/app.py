@@ -1,12 +1,15 @@
 import re
 import logging
 import bcrypt
+import os
+import uuid
+import shutil
 
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, status, File, Form, UploadFile
+from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
-from fastapi import status
 
 from database.db import engine
 from database.models import Base
@@ -15,6 +18,8 @@ from database.crud import *
 from database.dto import *
 
 from core.exceptions import *
+
+UPLOAD_DIR = "/data/images"
 
 class FastAPIObfuscationFilter(logging.Filter):
     def filter(self, record: logging.LogRecord) -> bool:
@@ -30,11 +35,15 @@ async def lifespan(app: FastAPI):
     async with engine.begin() as connection:
         await connection.run_sync(Base.metadata.create_all)
 
-        loggers = ["uvicorn", "uvicorn.access", "uvicorn.error"]
+    loggers = ["uvicorn", "uvicorn.access", "uvicorn.error"]
         
-        for logger_name in loggers:
-            logger = logging.getLogger(logger_name)
-            logger.addFilter(FastAPIObfuscationFilter())
+    for logger_name in loggers:
+        logger = logging.getLogger(logger_name)
+        logger.addFilter(FastAPIObfuscationFilter())
+
+    os.makedirs(UPLOAD_DIR, exist_ok=True)
+    app.mount("/images/", StaticFiles(directory=UPLOAD_DIR), name="images")
+        
     yield
 
 app = FastAPI(lifespan=lifespan)
@@ -86,6 +95,7 @@ async def user_login(user_login: UserLogin):
 
 @app.post("/users/")
 async def add_user(user: UserCreate):
+    
     try:
         new_user = await add_user_to_db(user.id, user.username, user.password, user.couple_id)
         return new_user
@@ -180,18 +190,38 @@ async def get_wish_by_id(wish_id: int):
         return HTMLResponse(status_code=status.HTTP_404_NOT_FOUND, content=str(e))
 
 @app.post("/wishes/")
-async def add_wish(wish: WishCreate):
+async def add_wish(wish: WishCreate, image: UploadFile | None = File(None)):
+    image_filename = None
+    if image and image.filename:
+        if not image.content_type.startswith("image/"):
+            return HTMLResponse(status_code=status.HTTP_400_BAD_REQUEST, detail="File must be an image")
+    
+        ext = os.path.splitext(image.filename)[-1].lower()
+        if not ext:
+            ext = ".jpg"
+        image_filename = f"{uuid.uuid4().hex}{ext}"
+        filepath = os.path.join(UPLOAD_DIR,image_filename)
+        try:
+            with open(filepath, "wb") as buffer:
+                shutil.copyfileobj(image.file, buffer)
+        except Exception as e:
+               return HTMLResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, content=f"Error saving image: {str(e)}")
     try:
-        if wish.couple_id:
-            new_wish = await add_wish_to_db(wish.name, wish.price, wish.couple_id, wish.user_added_id, wish.article or 0, wish.url or '', wish.image or None)
-            return new_wish
-        else:
-            return HTMLResponse(status_code=status.HTTP_400_BAD_REQUEST, content="Не передано couple_id")
+        new_wish = await add_wish_to_db(wish.name, 
+                                        wish.price, 
+                                        wish.couple_id, 
+                                        wish.user_added_id, 
+                                        wish.article or 0, 
+                                        wish.url or '', 
+                                        image_filename if image_filename else None)
+        return new_wish
     except NoCoupleFoundError as e:
         return HTMLResponse(status_code=status.HTTP_404_NOT_FOUND, content=str(e))
     except NoUserFoundError as e:
         return HTMLResponse(status_code=status.HTTP_404_NOT_FOUND, content=str(e))
     except WishCreationError as e:
+        return HTMLResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, content=str(e))
+    except Exception as e:
         return HTMLResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, content=str(e))
     
 @app.put("/wishes/{wish_id}")
