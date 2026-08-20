@@ -33,6 +33,7 @@ pydantic-core==2.41.5
 pydantic-settings==2.12.0
     # via wishlist-tg-bot (core/pyproject.toml)
 python-dotenv==1.2.1
+python-multipart==0.0.26
     # via pydantic-settings
 sqlalchemy==2.0.46
     # via
