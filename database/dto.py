@@ -9,9 +9,10 @@ class WishBase(BaseModel):
 
 class WishCreate(WishBase):
     couple_id: int = Field(None, description="ID пары, для которой создается желание")
-    article: int = Field(None, ge=0, description="Артикул товара")
-    url: str = Field(None, min_length=0, description="Ссылка на товар")
+    article: Optional[int] = Field(None, ge=0, description="Артикул товара")
+    url: Optional[str] = Field(None, min_length=0, description="Ссылка на товар")
     user_added_id: int = Field(None, description="ID пользователя, добавившего желание")
+    image: Optional[str] = Field(None, description="Имя файла изображения, загруженного через /upload/")
 
 class WishUpdate(BaseModel):
     name: Optional[str] = Field(None, min_length=1, max_length=255)

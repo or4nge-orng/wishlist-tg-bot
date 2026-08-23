@@ -6,6 +6,7 @@ from sqlalchemy.orm import selectinload
 
 from typing import Optional
 import bcrypt
+import os
 
 from core.exceptions import *
 
@@ -263,11 +264,18 @@ async def edit_wish_in_db(wish_id: int, name: str, price: float, article: int = 
         wish = await sess.get(Wish, wish_id)
         if not wish:
             raise NoWishFoundError(wish_id)
+
+        new_image = image.strip() if isinstance(image, str) and image.strip() else None
+        if new_image and wish.image and wish.image != new_image:
+            old_path = os.path.join("uploads", wish.image)
+            if os.path.exists(old_path):
+                os.remove(old_path)
+        
         wish.name = name
         wish.price = price
         wish.article = article
         wish.url = url
-        wish.image = image.strip() if isinstance(image, str) and image.strip() else None
+        wish.image = new_image
         try:
             await sess.commit()
         except Exception as e:

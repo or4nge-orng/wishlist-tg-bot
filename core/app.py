@@ -19,7 +19,7 @@ from database.dto import *
 
 from core.exceptions import *
 
-UPLOAD_DIR = "/data/images"
+UPLOAD_DIR = "data"
 
 class FastAPIObfuscationFilter(logging.Filter):
     def filter(self, record: logging.LogRecord) -> bool:
@@ -189,38 +189,48 @@ async def get_wish_by_id(wish_id: int):
     except NoWishFoundError as e:
         return HTMLResponse(status_code=status.HTTP_404_NOT_FOUND, content=str(e))
 
-@app.post("/wishes/")
-async def add_wish(wish: WishCreate, image: UploadFile | None = File(None)):
-    image_filename = None
-    if image and image.filename:
-        if not image.content_type.startswith("image/"):
-            return HTMLResponse(status_code=status.HTTP_400_BAD_REQUEST, detail="File must be an image")
+@app.post("/upload/")
+async def upload_image(file: UploadFile = File(...)):
+    # Проверка типа
+    if not file.content_type.startswith("image/"):
+        return HTMLResponse(status_code=400, content="File must be an image")
     
-        ext = os.path.splitext(image.filename)[-1].lower()
-        if not ext:
-            ext = ".jpg"
-        image_filename = f"{uuid.uuid4().hex}{ext}"
-        filepath = os.path.join(UPLOAD_DIR,image_filename)
-        try:
-            with open(filepath, "wb") as buffer:
-                shutil.copyfileobj(image.file, buffer)
-        except Exception as e:
-               return HTMLResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, content=f"Error saving image: {str(e)}")
+    # Генерируем уникальное имя
+    ext = os.path.splitext(file.filename)[1]
+    if not ext:
+        ext = ".jpg"
+    filename = f"{uuid.uuid4().hex}{ext}"
+    filepath = os.path.join(UPLOAD_DIR, "wish_images", filename)
+    
+    # Сохраняем файл
     try:
-        new_wish = await add_wish_to_db(wish.name, 
-                                        wish.price, 
-                                        wish.couple_id, 
-                                        wish.user_added_id, 
-                                        wish.article or 0, 
-                                        wish.url or '', 
-                                        image_filename if image_filename else None)
+        with open(filepath, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+    except Exception as e:
+        return HTMLResponse(status_code=500, content=f"Failed to save file: {str(e)}")
+    
+    # Возвращаем только имя файла
+    return {"filename": filename}
+
+@app.post("/wishes/")
+async def add_wish(wish: WishCreate):
+    try:
+        new_wish = await add_wish_to_db(
+            name=wish.name,
+            price=wish.price,
+            couple_id=wish.couple_id,
+            user_added_id=wish.user_added_id,
+            article=wish.article or 0,
+            url=wish.url or '',
+            image=wish.image  # это имя файла, полученное от клиента
+        )
         return new_wish
     except NoCoupleFoundError as e:
-        return HTMLResponse(status_code=status.HTTP_404_NOT_FOUND, content=str(e))
+        return HTMLResponse(status_code=404, content=str(e))
     except NoUserFoundError as e:
-        return HTMLResponse(status_code=status.HTTP_404_NOT_FOUND, content=str(e))
+        return HTMLResponse(status_code=404, content=str(e))
     except WishCreationError as e:
-        return HTMLResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, content=str(e))
+        return HTMLResponse(status_code=500, content="Failed to create wish")
     except Exception as e:
         return HTMLResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, content=str(e))
     
@@ -228,7 +238,14 @@ async def add_wish(wish: WishCreate, image: UploadFile | None = File(None)):
 async def update_wish(wish_id: int, wish: WishUpdate):
     if wish.name:
         try:
-            await edit_wish_in_db(wish_id, wish.name, wish.price, wish.article or 0, wish.url or '', wish.image)
+            await edit_wish_in_db(
+            wish_id=wish_id,
+            name=wish.name,
+            price=wish.price,
+            article=wish.article,
+            url=wish.url,
+            image=wish.image
+        )
             return {"status": "success"}
         except NoWishFoundError as e:
             return HTMLResponse(status_code=status.HTTP_404_NOT_FOUND, content=str(e))
