@@ -191,25 +191,26 @@ async def get_wish_by_id(wish_id: int):
 
 @app.post("/upload/")
 async def upload_image(file: UploadFile = File(...)):
-    # Проверка типа
     if not file.content_type.startswith("image/"):
         return HTMLResponse(status_code=400, content="File must be an image")
-    
-    # Генерируем уникальное имя
+
     ext = os.path.splitext(file.filename)[1]
     if not ext:
         ext = ".jpg"
     filename = f"{uuid.uuid4().hex}{ext}"
-    filepath = os.path.join(UPLOAD_DIR, "wish_images", filename)
     
-    # Сохраняем файл
+    # Полный путь с подпапкой
+    upload_subdir = os.path.join(UPLOAD_DIR, "wish_images")
+    os.makedirs(upload_subdir, exist_ok=True)  # <- создаём папку, если её нет
+    
+    filepath = os.path.join(upload_subdir, filename)
+
     try:
         with open(filepath, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
     except Exception as e:
         return HTMLResponse(status_code=500, content=f"Failed to save file: {str(e)}")
-    
-    # Возвращаем только имя файла
+
     return {"filename": filename}
 
 @app.post("/wishes/")
