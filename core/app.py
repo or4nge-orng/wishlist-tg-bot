@@ -42,8 +42,9 @@ async def lifespan(app: FastAPI):
         logger.addFilter(FastAPIObfuscationFilter())
 
     os.makedirs(UPLOAD_DIR, exist_ok=True)
+    os.makedirs(os.path.join(UPLOAD_DIR, "wish_images"), exist_ok=True)
     app.mount("/images/", StaticFiles(directory=UPLOAD_DIR), name="images")
-        
+    
     yield
 
 app = FastAPI(lifespan=lifespan)
@@ -201,7 +202,6 @@ async def upload_image(file: UploadFile = File(...)):
     
     # Полный путь с подпапкой
     upload_subdir = os.path.join(UPLOAD_DIR, "wish_images")
-    os.makedirs(upload_subdir, exist_ok=True)  # <- создаём папку, если её нет
     
     filepath = os.path.join(upload_subdir, filename)
 
