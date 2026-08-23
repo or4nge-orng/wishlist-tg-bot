@@ -10,6 +10,8 @@ import os
 
 from core.exceptions import *
 
+UPLOAD_DIR = "/data"
+
 # ----- User Cruds -----
 
 async def get_all_users_from_db():
@@ -267,7 +269,7 @@ async def edit_wish_in_db(wish_id: int, name: str, price: float, article: int = 
 
         new_image = image.strip() if isinstance(image, str) and image.strip() else None
         if new_image and wish.image and wish.image != new_image:
-            old_path = os.path.join("uploads", wish.image)
+            old_path = os.path.join(UPLOAD_DIR, "wish_images", wish.image)
             if os.path.exists(old_path):
                 os.remove(old_path)
         

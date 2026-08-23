@@ -19,7 +19,7 @@ from database.dto import *
 
 from core.exceptions import *
 
-UPLOAD_DIR = "data"
+UPLOAD_DIR = "/data"
 
 class FastAPIObfuscationFilter(logging.Filter):
     def filter(self, record: logging.LogRecord) -> bool:
