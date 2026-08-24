@@ -20,6 +20,7 @@ from database.dto import *
 from core.exceptions import *
 
 UPLOAD_DIR = "/data"
+upload_subdir = os.path.join(UPLOAD_DIR, "wish_images")
 
 class FastAPIObfuscationFilter(logging.Filter):
     def filter(self, record: logging.LogRecord) -> bool:
@@ -42,8 +43,8 @@ async def lifespan(app: FastAPI):
         logger.addFilter(FastAPIObfuscationFilter())
 
     os.makedirs(UPLOAD_DIR, exist_ok=True)
-    os.makedirs(os.path.join(UPLOAD_DIR, "wish_images"), exist_ok=True)
-    app.mount("/images/", StaticFiles(directory=UPLOAD_DIR), name="images")
+    os.makedirs(upload_subdir, exist_ok=True)
+    app.mount("/images/", StaticFiles(directory=upload_subdir), name="images")
     
     yield
 
@@ -198,11 +199,7 @@ async def upload_image(file: UploadFile = File(...)):
     ext = os.path.splitext(file.filename)[1]
     if not ext:
         ext = ".jpg"
-    filename = f"{uuid.uuid4().hex}{ext}"
-    
-    # Полный путь с подпапкой
-    upload_subdir = os.path.join(UPLOAD_DIR, "wish_images")
-    
+    filename = f"{uuid.uuid4().hex}{ext}"    
     filepath = os.path.join(upload_subdir, filename)
 
     try:
