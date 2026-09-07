@@ -29,4 +29,5 @@ class Wish(Base):
     image: Mapped[Optional[str]] = mapped_column(nullable=True)
     couple_id: Mapped[int] = mapped_column(ForeignKey("couples.id", ondelete='CASCADE'))
     user_added_id: Mapped[int] = mapped_column(ForeignKey("user.id", ondelete='CASCADE'), nullable=True)
+    is_completed: Mapped[bool] = mapped_column(default=False)
     

@@ -261,7 +261,7 @@ async def add_wish_to_db(name: str, price: float, couple_id: int, user_added_id:
             print(f"Error in add_wish_to_db: {e}")  # ← для отладки
             raise WishCreationError()
         
-async def edit_wish_in_db(wish_id: int, name: str, price: float, article: int = 0, url: str = '', image: Optional[str] = ''):
+async def edit_wish_in_db(wish_id: int, name: str, price: float, article: int = 0, url: str = '', image: Optional[str] = '', is_completed: Optional[bool] = None):
     async with session() as sess:
         wish = await sess.get(Wish, wish_id)
         if not wish:
@@ -278,6 +278,10 @@ async def edit_wish_in_db(wish_id: int, name: str, price: float, article: int = 
         wish.article = article
         wish.url = url
         wish.image = new_image
+
+        if is_completed is not None:
+            wish.is_completed = is_completed
+
         try:
             await sess.commit()
         except Exception as e:

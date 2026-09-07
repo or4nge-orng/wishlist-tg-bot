@@ -20,6 +20,7 @@ class WishUpdate(BaseModel):
     article: Optional[int] = Field(None, ge=0)
     url: Optional[str] = Field(None, min_length=0)
     image: Optional[str] = Field(None, min_length=0)
+    is_completed: Optional[bool] = Field(None)
     
     @field_validator('price')
     def price_positive(cls, v):
@@ -34,6 +35,7 @@ class Wish(WishBase):
     image: Optional[str] = None     # ← ОБЯЗАТЕЛЬНО!
     couple_id: int
     user_added_id: Optional[int] = None
+    is_completed: bool
     
     class Config:
         from_attributes = True
