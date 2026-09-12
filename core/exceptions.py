@@ -65,3 +65,7 @@ class WishUpdateError(CoupleWishesException):
         self.wish_id = wish_id
     def __str__(self):
         return f"Ошибка изменения желания {self.wish_id}"
+
+class WishCompletionToggleFailed(CoupleWishesException):
+    def __str__(self):
+        return "Ошибка переключения статуса выполнения желания"

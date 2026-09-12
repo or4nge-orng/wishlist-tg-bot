@@ -289,6 +289,20 @@ async def edit_wish_in_db(wish_id: int, name: str, price: float, article: int = 
             print(f"Error in edit_wish_in_db: {e}")  # ← для отладки
             raise WishUpdateError()
 
+async def toggle_completion(wish_id: int):
+    async with session() as sess:
+        wish = await sess.get(Wish, wish_id)
+        if not wish:
+            raise NoWishFoundError(wish_id)
+
+        wish.is_completed = not wish.is_completed
+
+        try:
+            await sess.commit()
+        except Exception as e:
+            await sess.rollback()
+            raise WishCompletionToggleFailed()
+    
 async def delete_wish_from_db(wish_id: int):
     async with session() as sess:
         wish = await sess.get(Wish, wish_id)

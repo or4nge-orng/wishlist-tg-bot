@@ -250,6 +250,14 @@ async def update_wish(wish_id: int, wish: WishUpdate):
             return HTMLResponse(status_code=status.HTTP_404_NOT_FOUND, content=str(e))
         except WishUpdateError as e:
             return HTMLResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, content=str(e))
+
+@app.patch('/wishes/{wish_id}/toggle_completed')
+async def toggle_wish_completion(wish_id: int):
+    try:
+        await toggle_completion(wish_id)
+        return {"status": "success"}
+    except NoWishFoundError as e:
+        return HTMLResponse(status_code=status.HTTP_404_NOT_FOUND, content=str(e))
         
 @app.delete("/wishes/{wish_id}")
 async def delete_wish(wish_id: int):
