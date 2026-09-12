@@ -237,13 +237,14 @@ async def update_wish(wish_id: int, wish: WishUpdate):
     if wish.name:
         try:
             await edit_wish_in_db(
-            wish_id=wish_id,
-            name=wish.name,
-            price=wish.price,
-            article=wish.article,
-            url=wish.url,
-            image=wish.image
-        )
+                wish_id=wish_id,
+                name=wish.name,
+                price=wish.price,
+                article=wish.article,
+                url=wish.url,
+                image=wish.image,
+                is_completed=wish.is_completed
+            )
             return {"status": "success"}
         except NoWishFoundError as e:
             return HTMLResponse(status_code=status.HTTP_404_NOT_FOUND, content=str(e))

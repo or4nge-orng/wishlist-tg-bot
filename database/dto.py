@@ -35,7 +35,7 @@ class Wish(WishBase):
     image: Optional[str] = None     # ← ОБЯЗАТЕЛЬНО!
     couple_id: int
     user_added_id: Optional[int] = None
-    is_completed: bool
+    is_completed: bool = False
     
     class Config:
         from_attributes = True
